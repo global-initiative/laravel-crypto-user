@@ -1,0 +1,63 @@
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class CreateCryptoUserTables extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        $tables = config('crypto-user.tables');
+        $userTable = config('crypto-user.user.table_name');
+
+        Schema::create($tables['keys'], function (Blueprint $table) use ($userTable) {
+            $table->unsignedInteger('user_id');
+            $table->text('private_key');
+            $table->text('public_key');
+            $table->timestamps();
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on($userTable)
+                ->onDelete('cascade');
+        });
+
+        Schema::create($tables['passphrases'], function (Blueprint $table) use ($userTable) {
+            $table->unsignedInteger('user_id');
+            $table->unsignedInteger('related_user_id');
+            $table->timestamps();
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on($userTable)
+                ->onDelete('cascade');
+
+            $table->foreign('related_user_id')
+                ->references('id')
+                ->on($userTable)
+                ->onDelete('cascade');
+        });
+
+        DB::statement('ALTER TABLE `' . $tables['passphrases'] . '` ADD `passphrase` VARBINARY(255)');
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        $tables = config('crypto-user.tables');
+
+        Schema::drop($tables['keys']);
+        Schema::drop($tables['passphrases']);
+    }
+}
